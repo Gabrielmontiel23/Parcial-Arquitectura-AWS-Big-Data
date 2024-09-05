@@ -1,45 +1,48 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 import mysql.connector
 from mysql.connector import Error
 
 app = Flask(__name__)
 
-@app.route('/test-db-connection')
-def test_db_connection():
+@app.route('/add-user', methods=['POST'])
+def add_user():
     connection = None
     cursor = None
     try:
-        # Intento de conexión a la base de datos MySQL
+        # Obtener datos del cuerpo de la solicitud
+        user_data = request.get_json()
+        nombre = user_data['nombre']
+        email = user_data['email']
+        
+        # Conexión a la base de datos
         connection = mysql.connector.connect(
-            host='172.31.84.130',  # IP privada de tu servidor MySQL
-            user='flask_user',  # Usuario de la base de datos
-            password='pws1234!',  # Contraseña de la base de datos
-            database='baseparcial'  # Nombre de la base de datos
+            host='172.31.84.130',
+            user='flask_user',
+            password='pws1234!',
+            database='baseparcial'
         )
 
-        # Verifica si la conexión es exitosa
+        # Inserción de datos en la tabla
         if connection.is_connected():
             cursor = connection.cursor()
-            cursor.execute("SELECT DATABASE();")
-            db = cursor.fetchone()
+            query = "INSERT INTO usuarios (nombre, email) VALUES (%s, %s)"
+            cursor.execute(query, (nombre, email))
+            connection.commit()
             return jsonify({
                 "status": "success",
-                "message": "Conexión exitosa a la base de datos",
-                "database": db[0]
+                "message": "Usuario añadido con éxito"
             })
 
     except Error as e:
-        # Manejador de errores si la conexión falla
         return jsonify({
             "status": "error",
-            "message": f"Error al conectar a la base de datos: {e}"
+            "message": f"Error al añadir usuario: {e}"
         })
 
     finally:
-        # Cierra cursor y conexión si están definidos y conectados
-        if cursor is not None:
+        if cursor:
             cursor.close()
-        if connection is not None and connection.is_connected():
+        if connection and connection.is_connected():
             connection.close()
 
 if __name__ == '__main__':
