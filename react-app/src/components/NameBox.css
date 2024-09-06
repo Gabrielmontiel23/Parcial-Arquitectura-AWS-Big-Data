@@ -1,0 +1,18 @@
+/* NameBox.css */
+
+.name-box {
+  position: absolute;
+  top: 20px;
+  left: 20px;  /* Cambiado de 'right' a 'left' para alinearlo a la izquierda */
+  background-color: #007bff;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  text-align: left;  /* Alinea el texto a la izquierda */
+}
+
+.name-box p {
+  margin: 0;
+  font-size: 14px;
+}

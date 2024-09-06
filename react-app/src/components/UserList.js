@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import './UserList.css'; // Importar los estilos
 
 const UserList = () => {
   const [users, setUsers] = useState([]);
@@ -8,7 +9,7 @@ const UserList = () => {
       try {
         const response = await fetch('http://18.210.27.250:5000/get-users');
         const data = await response.json();
-        setUsers(data.data);  // Asegúrate de que 'data.data' contiene la lista de usuarios
+        setUsers(data.data);
       } catch (error) {
         console.error('Error fetching users:', error);
       }

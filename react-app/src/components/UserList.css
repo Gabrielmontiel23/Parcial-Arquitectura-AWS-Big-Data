@@ -1,0 +1,18 @@
+/* UserList.css */
+
+h2 {
+  color: #333;
+}
+
+ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+li {
+  background: #ffffff;
+  margin: 5px 0;
+  padding: 10px;
+  border-radius: 4px;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+}
