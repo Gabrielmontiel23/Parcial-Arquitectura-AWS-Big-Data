@@ -2,11 +2,12 @@ name: Backend Tests and Deploy
 
 on:
   push:
-    branches: [ backend ]
+    branches: [ backend ]  # Ejecuta la acción solo en la rama 'backend'
 
 jobs:
   test:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -25,11 +26,11 @@ jobs:
       - name: Run tests
         run: |
           source env/bin/activate
-          pytest
+          pytest  # Ejecución de pruebas unitarias con pytest
 
   deploy:
     runs-on: ubuntu-latest
-    needs: test
+    needs: test  # Solo se ejecuta si el trabajo 'test' pasa
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -43,9 +44,18 @@ jobs:
         run: |
           echo "$EC2_PRIVATE_KEY" > ec2_key && chmod 600 ec2_key
           ssh -o StrictHostKeyChecking=no -i ec2_key ${EC2_USER}@${SERVER_IP} '
+            # Navegar al directorio de la aplicación
             cd ${APP_DIR} &&
+            
+            # Activar el entorno virtual
             source env/bin/activate &&
+            
+            # Actualizar código desde la rama 'backend'
             git pull origin backend &&
+            
+            # Instalar dependencias
             pip install -r requirements.txt &&
+            
+            # Reiniciar el servicio Flask
             sudo systemctl restart flask-backend
           '
