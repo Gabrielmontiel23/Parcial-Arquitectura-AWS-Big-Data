@@ -7,7 +7,7 @@ const UserList = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await fetch('http://18.210.27.250:5000/get-users');
+        const response = await fetch('http://18.205.11.118:5000/get-users');
         const data = await response.json();
         setUsers(data.data);
       } catch (error) {
