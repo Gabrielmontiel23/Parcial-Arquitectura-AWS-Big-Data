@@ -25,11 +25,3 @@ jobs:
     - name: Run unit tests
       run: |
         python -m unittest test_main_app.py
-
-    - name: Create test-passed tag
-      if: success()
-      run: |
-        git tag test-passed
-        git push origin test-passed
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
