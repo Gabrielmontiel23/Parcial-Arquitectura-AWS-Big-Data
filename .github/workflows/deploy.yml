@@ -40,5 +40,5 @@ jobs:
             git pull origin backend &&
 
             # Instalar dependencias necesarias
-            pip install -r requirements.txt &&
+            pip install -r requirements.txt
           '
