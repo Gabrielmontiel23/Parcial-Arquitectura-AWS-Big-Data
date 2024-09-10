@@ -18,7 +18,7 @@ const RegisterForm = () => {
     e.preventDefault();
     // Enviar los datos al backend Flask
     try {
-      const response = await fetch('http://18.205.11.118:5000/add-user', {
+      const response = await fetch('http://ec2-18-205-11-118.compute-1.amazonaws.com:5000/add-user', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
