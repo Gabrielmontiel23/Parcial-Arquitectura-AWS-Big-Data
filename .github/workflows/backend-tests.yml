@@ -3,7 +3,7 @@ name: Backend Unit Tests
 on:
   push:
     branches:
-      - backend
+      - backend  # Cambia a la rama donde se hacen los cambios para pruebas
 
 jobs:
   test:
@@ -24,4 +24,4 @@ jobs:
 
     - name: Run unit tests
       run: |
-        python -m unittest test_main_app.py
+        python -m unittest discover -s tests  # Ajusta el comando si es necesario
