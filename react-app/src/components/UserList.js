@@ -7,7 +7,7 @@ const UserList = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await fetch('http://ec2-18-205-11-118.compute-1.amazonaws.com:5000/get-users');
+        const response = await fetch('http://ec2-54-237-99-1.compute-1.amazonaws.com:5000/get-users');
         const data = await response.json();
         setUsers(data.data);
       } catch (error) {
