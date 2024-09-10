@@ -34,7 +34,12 @@ jobs:
         # Conectar a la instancia y realizar el despliegue
         ssh -o StrictHostKeyChecking=no -i ec2_key ${EC2_USER}@${SERVER_IP} '
             cd ${APP_DIR} &&
+            # Activar el entorno virtual si es necesario
             source env/bin/activate &&
-            pip install -r requirements.txt &&
+
+            # Sincronizar los últimos cambios del repositorio
+            git fetch --all &&
+            git reset --hard origin/backend &&
+            git pull origin backend &&
             sudo systemctl restart flask-app.service
         '
