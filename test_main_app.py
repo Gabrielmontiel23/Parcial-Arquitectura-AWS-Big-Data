@@ -1,34 +1,40 @@
-# test_main_app.py
-import unittest
-from main_app import app
+# main_app.py
+from flask import Flask, request, jsonify
+from flask_sqlalchemy import SQLAlchemy
 
-class TestMainApp(unittest.TestCase):
+app = Flask(__name__)
 
-    def setUp(self):
-        # Configuración inicial para las pruebas
-        app.config['TESTING'] = True
-        self.client = app.test_client()
+# Configuración de la base de datos
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///test_database.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-    def test_add_user(self):
-        # Prueba para la ruta /add-user
-        response = self.client.post('/add-user', json={
-            'nombres': 'Maria',
-            'apellidos': 'Pérez',
-            'fecha_nacimiento': '1990-01-01',
-            'password': 'password123'
-        })
-        self.assertEqual(response.status_code, 200)
-        self.assertIn('Usuario añadido con éxito', response.get_json().get('message', ''))
-        print('Usuario añadido con éxito', response.get_json().get('message', ''))
+db = SQLAlchemy(app)
 
-    def test_get_users(self):
-        # Prueba para la ruta /get-users
-        response = self.client.get('/get-users')
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.get_json().get('status'), 'success')
-        # Verificar que la respuesta contenga una lista
-        self.assertIsInstance(response.get_json().get('data'), list)
-        print(response.get_json().get('data'), list)
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    nombres = db.Column(db.String(50), nullable=False)
+    apellidos = db.Column(db.String(50), nullable=False)
+    fecha_nacimiento = db.Column(db.String(10), nullable=False)
+    password = db.Column(db.String(200), nullable=False)
+
+@app.route('/add-user', methods=['POST'])
+def add_user():
+    data = request.get_json()
+    new_user = User(
+        nombres=data['nombres'],
+        apellidos=data['apellidos'],
+        fecha_nacimiento=data['fecha_nacimiento'],
+        password=data['password']
+    )
+    db.session.add(new_user)
+    db.session.commit()
+    return jsonify({'message': 'Usuario añadido con éxito'}), 200
+
+@app.route('/get-users', methods=['GET'])
+def get_users():
+    users = User.query.all()
+    user_list = [{'id': user.id, 'nombres': user.nombres, 'apellidos': user.apellidos, 'fecha_nacimiento': user.fecha_nacimiento} for user in users]
+    return jsonify({'status': 'success', 'data': user_list}), 200
 
 if __name__ == '__main__':
-    unittest.main()
+    app.run(debug=True)
