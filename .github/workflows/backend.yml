@@ -13,10 +13,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Print Partial EC2 Private Key (Safe Debug)
+      - name: Check EC2 Private Key Length
         run: |
-          echo "Partial EC2_PRIVATE_KEY: ${EC2_PRIVATE_KEY:0:5}...${EC2_PRIVATE_KEY: -5}"
+          echo "Length of EC2_PRIVATE_KEY: ${#EC2_PRIVATE_KEY}"
         env:
           EC2_PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
+
 
 
