@@ -1,45 +1,25 @@
-name: Backend Unit Tests on EC2
+name: Deploy to EC2
 
 on:
   push:
-    branches: [ backend ]  # Asegúrate de especificar la rama correcta
+    branches:
+      - backend
 
 jobs:
-  test:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Setup Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.x'
+      - name: Set up SSH key
+        run: |
+          echo "$EC2_PRIVATE_KEY" | tr -d '\r' > ec2_key
+          chmod 600 ec2_key
 
-    - name: Copy project to EC2 and run tests
-      env:
-        EC2_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-        SERVER_IP: ${{ secrets.SSH_HOST }}
-        EC2_USER: ${{ secrets.USER_NAME }}
-        APP_DIR: /home/ubuntu/environment/Backend  # Cambia a la ubicación del proyecto en la instancia EC2
-      run: |
-        echo "$EC2_PRIVATE_KEY" | tr -d '\r' > ec2_key
-        chmod 600 ec2_key
-        ssh -o StrictHostKeyChecking=no -i ec2_key ${EC2_USER}@${SERVER_IP} '
-            # Acceder al directorio del proyecto
-            cd $APP_DIR && ls &&
-
-            # Activar el entorno virtual si es necesario
-            source env/bin/activate &&
-
-            # Sincronizar los últimos cambios del repositorio
-            git fetch --all &&
-            git reset --hard origin/backend &&
-            git pull origin backend &&
-
-            # Instalar dependencias necesarias
-            pip install -r requirements.txt &&
-
-            # Ejecutar las pruebas unitarias
-            python -m unittest discover -s tests  # Asegúrate de que la ruta es correcta
-        '
+      - name: Connect to EC2 and run commands
+        run: |
+          ssh -i ec2_key -o StrictHostKeyChecking=no ubuntu@54.237.99.1 'your-command-here'
+        env:
+          EC2_PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
