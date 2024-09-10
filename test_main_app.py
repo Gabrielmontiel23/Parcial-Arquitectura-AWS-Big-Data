@@ -12,7 +12,7 @@ class TestMainApp(unittest.TestCase):
     def test_add_user(self):
         # Prueba para la ruta /add-user
         response = self.client.post('/add-user', json={
-            'nombres': 'Juan',
+            'nombres': 'Maria',
             'apellidos': 'Pérez',
             'fecha_nacimiento': '1990-01-01',
             'password': 'password123'
