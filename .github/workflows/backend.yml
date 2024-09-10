@@ -1,25 +1,21 @@
-name: Deploy to EC2
+name: Debug EC2 Private Key
 
 on:
   push:
     branches:
-      - backend
+      - main
 
 jobs:
-  deploy:
+  debug:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up SSH key
+      - name: Print EC2 Private Key (Debug Only)
         run: |
-          echo "$EC2_PRIVATE_KEY" | tr -d '\r' > ec2_key
-          chmod 600 ec2_key
-
-      - name: Connect to EC2 and run commands
-        run: |
-          ssh -i ec2_key -o StrictHostKeyChecking=no ubuntu@54.237.99.1 'your-command-here'
+          echo "Content of EC2_PRIVATE_KEY:"
+          echo "$EC2_PRIVATE_KEY"
         env:
           EC2_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
