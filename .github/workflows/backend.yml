@@ -1,45 +1,43 @@
-name: Backend Unit Tests on EC2
+name: Backend CI/CD
 
 on:
   push:
-    branches: [ backend ]  # Asegúrate de especificar la rama correcta
+    branches:
+      - backend
 
 jobs:
-  test:
+  build:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - name: Checkout code
+      uses: actions/checkout@v2
 
-    - name: Setup Python
+    - name: Set up Python
       uses: actions/setup-python@v2
       with:
         python-version: '3.x'
 
-    - name: Copy project to EC2 and run tests
-      env:
-        EC2_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-        SERVER_IP: ${{ secrets.BACKEND_SSH_HOST }}
-        EC2_USER: ${{ secrets.BACKEND_USER_NAME }}
-        APP_DIR: /home/ubuntu/Backend  # Cambia a la ubicación del proyecto en la instancia EC2
+    - name: Install dependencies
       run: |
-        echo "$EC2_PRIVATE_KEY" | tr -d '\r' > ec2_key
-        chmod 600 ec2_key
-        ssh -o StrictHostKeyChecking=no -i ec2_key ${EC2_USER}@${SERVER_IP} '
-            # Acceder al directorio del proyecto
-            cd Parcial-Arquitectura-AWS-Big-Data
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
 
-            # Activar el entorno virtual si es necesario
-            source env/bin/activate &&
+    - name: Run tests
+      run: |
+        pytest test_main_app.py
 
-            # Sincronizar los últimos cambios del repositorio
-            git fetch --all &&
-            git reset --hard origin/backend &&
-            git pull origin backend &&
-
-            # Instalar dependencias necesarias
-            pip install -r requirements.txt &&
-
-            # Ejecutar las pruebas unitarias
-            python -m unittest discover -s tests  # Asegúrate de que la ruta es correcta
-        '
+    - name: Deploy to EC2
+      env:
+        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        EC2_USER: ${{ secrets.EC2_USER }}
+        EC2_HOST: ${{ secrets.EC2_HOST }}
+      run: |
+        scp -r ./ ec2-user@$EC2_HOST:/home/$EC2_USER/Parcial-Arquitectura-AWS-Big-Data
+        ssh -o StrictHostKeyChecking=no $EC2_USER@$EC2_HOST << 'EOF'
+        pwd
+        ls -la
+        cd /home/$EC2_USER/Parcial-Arquitectura-AWS-Big-Data
+        pip install -r requirements.txt
+        sudo systemctl restart backend.service
+        EOF
