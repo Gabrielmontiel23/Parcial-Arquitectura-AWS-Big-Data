@@ -1,24 +1,27 @@
-# test_main_app.py
 import unittest
-from main_app import app, db
+import tempfile
+import os
+from main_app import app
+from flask_sqlalchemy import SQLAlchemy
 
 class TestMainApp(unittest.TestCase):
 
     def setUp(self):
-        # Configuración inicial para las pruebas
+        # Crear una base de datos temporal en memoria
+        self.db_fd, self.db_path = tempfile.mkstemp()
         app.config['TESTING'] = True
-        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'  # Usar SQLite en memoria
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + self.db_path
         self.client = app.test_client()
-        
-        # Crear todas las tablas
+
+        # Crear las tablas en la base de datos temporal
         with app.app_context():
+            db = SQLAlchemy(app)
             db.create_all()
 
     def tearDown(self):
-        # Eliminar todas las tablas después de cada prueba
-        with app.app_context():
-            db.session.remove()
-            db.drop_all()
+        # Cerrar y eliminar la base de datos temporal
+        os.close(self.db_fd)
+        os.unlink(self.db_path)
 
     def test_add_user(self):
         # Prueba para la ruta /add-user
@@ -30,16 +33,13 @@ class TestMainApp(unittest.TestCase):
         })
         self.assertEqual(response.status_code, 200)
         self.assertIn('Usuario añadido con éxito', response.get_json().get('message', ''))
-        print('Usuario añadido con éxito', response.get_json().get('message', ''))
 
     def test_get_users(self):
         # Prueba para la ruta /get-users
         response = self.client.get('/get-users')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.get_json().get('status'), 'success')
-        # Verificar que la respuesta contenga una lista
         self.assertIsInstance(response.get_json().get('data'), list)
-        print(response.get_json().get('data'), list)
 
 if __name__ == '__main__':
     unittest.main()
