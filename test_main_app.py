@@ -1,13 +1,24 @@
 # test_main_app.py
 import unittest
-from main_app import app
+from main_app import app, db
 
 class TestMainApp(unittest.TestCase):
 
     def setUp(self):
         # Configuración inicial para las pruebas
         app.config['TESTING'] = True
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'  # Usar SQLite en memoria
         self.client = app.test_client()
+        
+        # Crear todas las tablas
+        with app.app_context():
+            db.create_all()
+
+    def tearDown(self):
+        # Eliminar todas las tablas después de cada prueba
+        with app.app_context():
+            db.session.remove()
+            db.drop_all()
 
     def test_add_user(self):
         # Prueba para la ruta /add-user
