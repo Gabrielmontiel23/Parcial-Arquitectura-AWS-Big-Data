@@ -50,12 +50,19 @@ jobs:
         EC2_USER: ${{ secrets.BACKEND_USER_NAME }}
         APP_DIR: /home/ubuntu/Parcial-Arquitectura-AWS-Big-Data
       run: |
-        scp -o StrictHostKeyChecking=no -i ec2_key -r ./* ${EC2_USER}@${SERVER_IP}:${APP_DIR}
+          echo "$EC2_PRIVATE_KEY" | tr -d '\r' > ec2_key
+          chmod 600 ec2_key
+          ssh -o StrictHostKeyChecking=no -i ec2_key ${EC2_USER}@${SERVER_IP} '
+            # Acceder al directorio del proyecto
+            cd Parcial-Arquitectura-AWS-Big-Data &&
 
-        ssh -o StrictHostKeyChecking=no -i ec2_key ${EC2_USER}@${SERVER_IP} '
-            cd ${APP_DIR} &&
+            # Activar el entorno virtual si es necesario
             source env/bin/activate &&
-            pip install -r requirements.txt &&
-            # Puedes ajustar el siguiente comando si necesitas iniciar tu aplicación de otra manera
-            python main_app.py
-        '
+
+            # Sincronizar los últimos cambios del repositorio
+            git fetch --all &&
+            git reset --hard origin/backend &&
+            git pull origin backend &&
+
+             python main_app.py
+          '
