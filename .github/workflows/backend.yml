@@ -13,9 +13,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Print EC2 Private Key (Debug Only)
+      - name: Print Partial EC2 Private Key (Safe Debug)
         run: |
-          echo "Content of EC2_PRIVATE_KEY:"
-          echo "$EC2_PRIVATE_KEY"
+          echo "Partial EC2_PRIVATE_KEY: ${EC2_PRIVATE_KEY:0:5}...${EC2_PRIVATE_KEY: -5}"
         env:
           EC2_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+
