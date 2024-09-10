@@ -1,39 +1,34 @@
-name: Deploy to EC2
+name: Backend Unit Tests on EC2
 
 on:
   push:
-    branches:
-      - backend
+    branches: [ backend ]  # Asegúrate de especificar la rama correcta
 
 jobs:
-  setup:
+  test:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
+    - uses: actions/checkout@v2
 
-  deploy:
-    runs-on: ubuntu-latest
-    needs: setup
+    - name: Setup Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
 
-    steps:
-    - name: Deploy to EC2
+    - name: Copy project to EC2 and run tests
       env:
         EC2_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         SERVER_IP: ${{ secrets.BACKEND_SSH_HOST }}
         EC2_USER: ${{ secrets.BACKEND_USER_NAME }}
-        APP_DIR: /home/ubuntu/Parcial-Arquitectura-AWS-Big-Data
+        APP_DIR: /home/ubuntu/Parcial-Arquitectura-AWS-Big-Data  # Cambia a la ubicación del proyecto en la instancia EC2
       run: |
         echo "$EC2_PRIVATE_KEY" | tr -d '\r' > ec2_key
         chmod 600 ec2_key
-
-        # Copiar el contenido del repositorio al directorio en la instancia EC2
-        scp -o StrictHostKeyChecking=no -i ec2_key -r ./* ${EC2_USER}@${SERVER_IP}:${APP_DIR}
-
-        # Conectar a la instancia y realizar el despliegue
         ssh -o StrictHostKeyChecking=no -i ec2_key ${EC2_USER}@${SERVER_IP} '
-            cd ${APP_DIR} &&
+            # Acceder al directorio del proyecto
+            cd Parcial-Arquitectura-AWS-Big-Data &&
+
             # Activar el entorno virtual si es necesario
             source env/bin/activate &&
 
@@ -41,5 +36,10 @@ jobs:
             git fetch --all &&
             git reset --hard origin/backend &&
             git pull origin backend &&
-            sudo systemctl restart flask-app.service
+
+            # Instalar dependencias necesarias
+            pip install -r requirements.txt &&
+
+            # Ejecutar las pruebas unitarias directamente
+            python -m unittest test_main_app.py
         '
