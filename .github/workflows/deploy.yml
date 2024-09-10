@@ -3,22 +3,21 @@ name: Deploy to EC2
 on:
   push:
     branches:
-      - backend  # Cambia a la rama donde deseas desplegar
+      - backend
 
 jobs:
-  deploy:
+  setup:
     runs-on: ubuntu-latest
-    needs: test  # Esto asegura que el despliegue solo se ejecute si las pruebas han pasado
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: Setup Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.x'
+  deploy:
+    runs-on: ubuntu-latest
+    needs: setup  # Esto asegura que el trabajo 'deploy' solo se ejecute después del trabajo 'setup'
 
+    steps:
     - name: Deploy to EC2
       env:
         EC2_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
@@ -28,20 +27,10 @@ jobs:
       run: |
         echo "$EC2_PRIVATE_KEY" | tr -d '\r' > ec2_key
         chmod 600 ec2_key
+        scp -o StrictHostKeyChecking=no -i ec2_key -r . ${EC2_USER}@${SERVER_IP}:${APP_DIR}
         ssh -o StrictHostKeyChecking=no -i ec2_key ${EC2_USER}@${SERVER_IP} '
-            # Acceder al directorio del proyecto
-            cd Parcial-Arquitectura-AWS-Big-Data &&
-
-            # Activar el entorno virtual si es necesario
+            cd ${APP_DIR} &&
             source env/bin/activate &&
-
-            # Sincronizar los últimos cambios del repositorio
-            git fetch --all &&
-            git reset --hard origin/backend &&
-            git pull origin backend &&
-
-            # Instalar dependencias necesarias
             pip install -r requirements.txt &&
-
-            python main_app.py
+            sudo systemctl restart flask-app.service
         '
