@@ -27,7 +27,7 @@ jobs:
         chmod 600 ec2_key
         ssh -o StrictHostKeyChecking=no -i ec2_key ${EC2_USER}@${SERVER_IP} '
             # Acceder al directorio del proyecto
-            cd $APP_DIR && ls &&
+            cd Parcial-Arquitectura-AWS-Big-Data
 
             # Activar el entorno virtual si es necesario
             source env/bin/activate &&
