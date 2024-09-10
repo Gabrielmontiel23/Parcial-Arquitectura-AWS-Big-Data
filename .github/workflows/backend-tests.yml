@@ -1,0 +1,27 @@
+name: Backend Unit Tests
+
+on:
+  push:
+    branches:
+      - backend  # Cambia a la rama donde se hacen los cambios para pruebas
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Setup Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+
+    - name: Run unit tests
+      run: |
+        python -m unittest test_main_app.py # Ajusta el comando si es necesario
