@@ -27,7 +27,7 @@ jobs:
         chmod 600 ec2_key
         ssh -o StrictHostKeyChecking=no -i ec2_key ${EC2_USER}@${SERVER_IP} '
             # Acceder al directorio del proyecto
-            cd Parcial-Arquitectura-AWS-Big-Data 
+            cd Parcial-Arquitectura-AWS-Big-Data &&
 
             # Activar el entorno virtual si es necesario
             source env/bin/activate &&
@@ -40,6 +40,6 @@ jobs:
             # Instalar dependencias necesarias
             pip install -r requirements.txt &&
 
-            # Ejecutar las pruebas unitarias
-            python -m unittest discover -s tests  # Asegúrate de que la ruta es correcta
+            # Ejecutar las pruebas unitarias directamente
+            python -m unittest test_main_app.py
         '
