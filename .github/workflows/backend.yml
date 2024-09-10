@@ -1,43 +1,45 @@
-name: Backend CI/CD
+name: Backend Unit Tests on EC2
 
 on:
   push:
-    branches:
-      - backend
+    branches: [ backend ]  # Asegúrate de especificar la rama correcta
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
+    - uses: actions/checkout@v2
 
-    - name: Set up Python
+    - name: Setup Python
       uses: actions/setup-python@v2
       with:
         python-version: '3.x'
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-
-    - name: Run tests
-      run: |
-        pytest test_main_app.py
-
-    - name: Deploy to EC2
+    - name: Copy project to EC2 and run tests
       env:
-        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-        EC2_USER: ${{ secrets.EC2_USER }}
-        EC2_HOST: ${{ secrets.EC2_HOST }}
+        EC2_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        SERVER_IP: ${{ secrets.BACKEND_SSH_HOST }}
+        EC2_USER: ${{ secrets.BACKEND_USER_NAME }}
+        APP_DIR: /home/ubuntu/Parcial-Arquitectura-AWS-Big-Data  # Cambia a la ubicación del proyecto en la instancia EC2
       run: |
-        scp -r ./ ec2-user@$EC2_HOST:/home/$EC2_USER/Parcial-Arquitectura-AWS-Big-Data
-        ssh -o StrictHostKeyChecking=no $EC2_USER@$EC2_HOST << 'EOF'
-        pwd
-        ls -la
-        cd /home/$EC2_USER/Parcial-Arquitectura-AWS-Big-Data
-        pip install -r requirements.txt
-        sudo systemctl restart backend.service
-        EOF
+        echo "$EC2_PRIVATE_KEY" | tr -d '\r' > ec2_key
+        chmod 600 ec2_key
+        ssh -o StrictHostKeyChecking=no -i ec2_key ${EC2_USER}@${SERVER_IP} '
+            # Acceder al directorio del proyecto
+            cd Parcial-Arquitectura-AWS-Big-Data 
+
+            # Activar el entorno virtual si es necesario
+            source env/bin/activate &&
+
+            # Sincronizar los últimos cambios del repositorio
+            git fetch --all &&
+            git reset --hard origin/backend &&
+            git pull origin backend &&
+
+            # Instalar dependencias necesarias
+            pip install -r requirements.txt &&
+
+            # Ejecutar las pruebas unitarias
+            python -m unittest discover -s tests  # Asegúrate de que la ruta es correcta
+        '
