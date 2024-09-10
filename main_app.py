@@ -7,7 +7,7 @@ from flask_cors import CORS
 app = Flask(__name__)
 
 # Configura CORS
-CORS(app)  # Permite solicitudes de cualquier origen
+CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True) # Permite solicitudes de cualquier origen
 
 # Ruta para añadir un nuevo usuario (POST)
 @app.route('/add-user', methods=['POST'])
@@ -27,7 +27,7 @@ def add_user():
         
         # Conexión a la base de datos
         connection = mysql.connector.connect(
-            host='172.31.84.130',
+            host='172.31.84.130', 
             user='flask_user',
             password='pws1234!',
             database='baseparcial'
