@@ -15,7 +15,7 @@ jobs:
 
   deploy:
     runs-on: ubuntu-latest
-    needs: setup  # Esto asegura que el trabajo 'deploy' solo se ejecute después del trabajo 'setup'
+    needs: setup
 
     steps:
     - name: Deploy to EC2
@@ -27,7 +27,11 @@ jobs:
       run: |
         echo "$EC2_PRIVATE_KEY" | tr -d '\r' > ec2_key
         chmod 600 ec2_key
-        scp -o StrictHostKeyChecking=no -i ec2_key -r . ${EC2_USER}@${SERVER_IP}:${APP_DIR}
+
+        # Copiar el contenido del repositorio al directorio en la instancia EC2
+        scp -o StrictHostKeyChecking=no -i ec2_key -r ./* ${EC2_USER}@${SERVER_IP}:${APP_DIR}
+
+        # Conectar a la instancia y realizar el despliegue
         ssh -o StrictHostKeyChecking=no -i ec2_key ${EC2_USER}@${SERVER_IP} '
             cd ${APP_DIR} &&
             source env/bin/activate &&
