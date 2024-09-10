@@ -22,4 +22,4 @@ jobs:
         run: |
           ssh -i ec2_key -o StrictHostKeyChecking=no ubuntu@54.237.99.1 'your-command-here'
         env:
-          EC2_PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
+          EC2_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
