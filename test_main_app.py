@@ -19,6 +19,7 @@ class TestMainApp(unittest.TestCase):
         })
         self.assertEqual(response.status_code, 200)
         self.assertIn('Usuario añadido con éxito', response.get_json().get('message', ''))
+        print('Usuario añadido con éxito', response.get_json().get('message', ''))
 
     def test_get_users(self):
         # Prueba para la ruta /get-users
@@ -27,6 +28,7 @@ class TestMainApp(unittest.TestCase):
         self.assertEqual(response.get_json().get('status'), 'success')
         # Verificar que la respuesta contenga una lista
         self.assertIsInstance(response.get_json().get('data'), list)
+        print(response.get_json().get('data'), list)
 
 if __name__ == '__main__':
     unittest.main()
