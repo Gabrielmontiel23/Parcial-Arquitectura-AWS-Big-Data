@@ -2,12 +2,13 @@ name: Deploy to EC2
 
 on:
   push:
-    tags:
-      - test-passed
+    branches:
+      - backend
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    needs: test  # Esto asegura que el despliegue solo se ejecute si las pruebas han pasado
 
     steps:
     - name: Checkout code
@@ -22,10 +23,20 @@ jobs:
       run: |
         echo "$EC2_PRIVATE_KEY" | tr -d '\r' > ec2_key
         chmod 600 ec2_key
-        scp -o StrictHostKeyChecking=no -i ec2_key -r . ${EC2_USER}@${SERVER_IP}:${APP_DIR}
         ssh -o StrictHostKeyChecking=no -i ec2_key ${EC2_USER}@${SERVER_IP} '
-            cd ${APP_DIR} &&
+            # Acceder al directorio del proyecto
+            cd Parcial-Arquitectura-AWS-Big-Data &&
+
+            # Activar el entorno virtual si es necesario
             source env/bin/activate &&
-            pip install -r requirements.txt &&
-            sudo systemctl restart flask-app.service
+
+            # Sincronizar los últimos cambios del repositorio
+            git fetch --all &&
+            git reset --hard origin/backend &&
+            git pull origin backend &&
+
+            # Ejecutar las pruebas unitarias directamente
+            python -m unittest test_main_app.py
+
+            python main_app.py
         '
