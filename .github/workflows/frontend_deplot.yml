@@ -22,30 +22,26 @@ jobs:
       run: |
         npm install
 
-    - name: Build application
-      run: |
-        npm run build
-
-    - name: Copy files to EC2
+    - name: Copy project to EC2 and restart server
       env:
         EC2_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         SERVER_IP: ${{ secrets.FRONTEND_SSH_HOST }}
         EC2_USER: ${{ secrets.FRONTEND_USER_NAME }}
-        BUILD_DIR: build  # Directorio de salida de la construcción de React
-        APP_DIR: /var/www/html  # Cambia a la ubicación en tu servidor EC2 donde se sirven los archivos estáticos
-      run: |
-        echo "$EC2_PRIVATE_KEY" | tr -d '\r' > ec2_key
-        chmod 600 ec2_key
-        rsync -avz -e "ssh -i ec2_key -o StrictHostKeyChecking=no" $BUILD_DIR/ ${EC2_USER}@${SERVER_IP}:${APP_DIR}/
-
-    - name: Restart server
-      env:
-        EC2_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-        SERVER_IP: ${{ secrets.FRONTEND_SSH_HOST }}
-        EC2_USER: ${{ secrets.FRONTEND_USER_NAME }}
+        APP_DIR: /home/ubuntu/Parcial-Arquitectura-AWS-Big-Data  # Cambia a la ubicación del proyecto en la instancia EC2
       run: |
         echo "$EC2_PRIVATE_KEY" | tr -d '\r' > ec2_key
         chmod 600 ec2_key
         ssh -o StrictHostKeyChecking=no -i ec2_key ${EC2_USER}@${SERVER_IP} '
-          sudo systemctl restart apache2  # O el comando para reiniciar tu servidor web
+            # Acceder al directorio del proyecto
+            cd Parcial-Arquitectura-AWS-Big-Data &&
+            cd react-app &&
+
+            # Sincronizar los últimos cambios del repositorio
+            git fetch --all &&
+            git reset --hard origin/frontend &&
+            git pull origin frontend &&
+            
+            npm run build
+            sudo cp -r build/* /var/www/html/
+            sudo systemctl restart apache2
         '
