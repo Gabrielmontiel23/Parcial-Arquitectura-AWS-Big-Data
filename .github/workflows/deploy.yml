@@ -34,21 +34,12 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: Setup SSH
+    - name: Setup SSH and deploy to EC2
       env:
         EC2_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         SERVER_IP: ${{ secrets.BACKEND_SSH_HOST }}
         EC2_USER: ${{ secrets.BACKEND_USER_NAME }}
-        APP_DIR: /home/ubuntu/Parcial-Arquitectura-AWS-Big-Data
-      run: |
-        echo "$EC2_PRIVATE_KEY" | tr -d '\r' > ec2_key
-        chmod 600 ec2_key
-
-    - name: Deploy to EC2
-      env:
-        SERVER_IP: ${{ secrets.BACKEND_SSH_HOST }}
-        EC2_USER: ${{ secrets.BACKEND_USER_NAME }}
-        APP_DIR: /home/ubuntu/Parcial-Arquitectura-AWS-Big-Data
+        APP_DIR: /home/ubuntu/Parcial-Arquitectura-AWS-Big-Data  # Cambia a la ubicación del proyecto en la instancia EC2
       run: |
         echo "$EC2_PRIVATE_KEY" | tr -d '\r' > ec2_key
         chmod 600 ec2_key
@@ -68,5 +59,7 @@ jobs:
             pip install -r requirements.txt &&
 
             # Ejecutar las pruebas unitarias directamente
+            python -m unittest test_main_app.py
+
             python main_app.py
         '
