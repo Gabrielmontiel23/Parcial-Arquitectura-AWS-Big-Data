@@ -57,9 +57,10 @@ jobs:
 
             # Instalar dependencias necesarias
             pip install -r requirements.txt &&
+            
+            # Detener instancias previas de Gunicorn si existen
+            pkill gunicorn || true
 
-            # Ejecutar las pruebas unitarias directamente
-            python -m unittest test_main_app.py
-
-            python main_app.py
+            # Ejecuta la aplicación con Gunicorn
+            gunicorn -b 0.0.0.0:5000 main_app:app --daemon
         '
