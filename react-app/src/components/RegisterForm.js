@@ -39,8 +39,8 @@ const RegisterForm = () => {
 
   return (
     <form onSubmit={handleSubmit}>
-      <h2>Registrar Usuario</h2>
-      <input type="text" name="nombres aqui" value={formData.nombres} onChange={handleChange} placeholder="Nombres" required />
+      <h2>Registrar Nuevo Usuario</h2>
+      <input type="text" name="nombres" value={formData.nombres} onChange={handleChange} placeholder="Nombres" required />
       <input type="text" name="apellidos" value={formData.apellidos} onChange={handleChange} placeholder="Apellidos" required />
       <input type="date" name="fecha_nacimiento" value={formData.fecha_nacimiento} onChange={handleChange} required />
       <input type="password" name="password" value={formData.password} onChange={handleChange} placeholder="Password" required />
