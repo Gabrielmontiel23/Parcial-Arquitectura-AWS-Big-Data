@@ -1,52 +1,93 @@
-import React, { useState } from 'react';
-import './RegisterForm.css'; // Importar los estilos
+import React, { useState, useEffect } from 'react';
 
 const RegisterForm = () => {
-  const [formData, setFormData] = useState({
-    nombres: '',
-    apellidos: '',
-    fecha_nacimiento: '',
-    password: '',
-  });
+    const [movies, setMovies] = useState([]);
+    const [selectedFilmId, setSelectedFilmId] = useState(null);
+    const [formData, setFormData] = useState({
+        rental_date: '',
+        customer_id: '',
+        film_id: ''
+    });
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-  };
+    // Obtener la lista de películas desde el backend
+    useEffect(() => {
+        fetch('http://ec2-34-236-249-156.compute-1.amazonaws.com:5000/movies')
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    setMovies(data.data); // Guardar las películas en el estado
+                    console.log(data.data)
+                }
+            })
+            .catch(error => console.error('Error al obtener las películas:', error));
+    }, []);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    // Enviar los datos al backend Flask
-    try {
-      const response = await fetch('http://ec2-54-237-99-1.compute-1.amazonaws.com:5000/add-user', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
+    // Manejar el cambio en la lista desplegable (selección de película)
+    const handleMovieChange = (e) => {
+        const filmId = e.target.value; // Obtener el film_id seleccionado
+        setSelectedFilmId(filmId);
+        setFormData({ ...formData, film_id: filmId }); // Actualizar el formData
+    };
 
-      if (response.ok) {
-        alert('Registro exitoso');
-        setFormData({ nombres: '', apellidos: '', fecha_nacimiento: '', password: '' });
-      } else {
-        alert('Error al registrar');
-      }
-    } catch (error) {
-      console.error('Error:', error);
-    }
-  };
+    // Manejar el envío del formulario
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        // Enviar los datos al backend, incluyendo film_id
+        fetch('http://ec2-34-236-249-156.compute-1.amazonaws.com:5000/add-rental', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                alert('Renta registrada con éxito');
+            } else {
+                alert(`Error: ${data.message}`);
+            }
+        })
+        .catch(error => console.error('Error al enviar los datos:', error));
+    };
 
-  return (
-    <form onSubmit={handleSubmit}>
-      <h2>Registrar Nuevo Usuario</h2>
-      <input type="text" name="nombres" value={formData.nombres} onChange={handleChange} placeholder="Nombres" required />
-      <input type="text" name="apellidos" value={formData.apellidos} onChange={handleChange} placeholder="Apellidos" required />
-      <input type="date" name="fecha_nacimiento" value={formData.fecha_nacimiento} onChange={handleChange} required />
-      <input type="password" name="password" value={formData.password} onChange={handleChange} placeholder="Password" required />
-      <button type="submit">Registrar</button>
-    </form>
-  );
+    return (
+        <form onSubmit={handleSubmit}>
+            <label>
+                Fecha de Renta:
+                <input
+                    type="date"
+                    value={formData.rental_date}
+                    onChange={(e) => setFormData({ ...formData, rental_date: e.target.value })}
+                    required
+                />
+            </label>
+            <br />
+            <label>
+                ID de Cliente:
+                <input
+                    type="number"
+                    value={formData.customer_id}
+                    onChange={(e) => setFormData({ ...formData, customer_id: e.target.value })}
+                    required
+                />
+            </label>
+            <br />
+            <label>
+                Película:
+                <select value={selectedFilmId} onChange={handleMovieChange} required>
+                    <option value="">Seleccione una película</option>
+                    {movies.map(movie => (
+                        <option key={movie.film_id} value={movie.film_id}>
+                            {movie.title}
+                        </option>
+                    ))}
+                </select>
+            </label>
+            <br />
+            <button type="submit">Registrar Renta</button>
+        </form>
+    );
 };
 
 export default RegisterForm;

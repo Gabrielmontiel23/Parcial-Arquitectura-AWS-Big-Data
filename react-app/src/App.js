@@ -1,6 +1,6 @@
 import React from 'react';
 import RegisterForm from './components/RegisterForm';
-import UserList from './components/UserList';
+import UserList from './components/MovieList';
 import NameBox from './components/NameBox';  // Importar el componente
 import './App.css';  // Asegúrate de que la ruta sea correcta
 
@@ -12,10 +12,10 @@ function App() {
       <NameBox />  {/* Añadir la caja de nombres fuera del contenedor principal */}
       <div className="App">
         <div className="container">
-          <h1>Gestión de Usuarios</h1>
+          <h1>Gestión de Rentas</h1>
           {showUsers ? <UserList /> : <RegisterForm />}
           <button onClick={() => setShowUsers(!showUsers)}>
-            {showUsers ? 'Registrar Nuevo Usuario' : 'Ver Usuarios Registrados'}
+            {showUsers ? 'Registrar Una Nueva Renta' : 'Ver Peliculas por Usuario'}
           </button>
         </div>
       </div>

@@ -1,5 +1,3 @@
-/* RegisterForm.css */
-
 body {
   margin: 0;
   display: flex;
@@ -22,17 +20,13 @@ form {
   max-width: 400px;
 }
 
-input {
+input, select {
   width: 100%;
   padding: 10px;
   margin: 10px 0;
   border: 1px solid #ddd;
   border-radius: 4px;
   box-sizing: border-box;
-}
-
-input[type="date"] {
-  cursor: pointer;
 }
 
 button {
@@ -48,4 +42,8 @@ button {
 
 button:hover {
   background-color: #0056b3;
+}
+
+p {
+  color: red;
 }

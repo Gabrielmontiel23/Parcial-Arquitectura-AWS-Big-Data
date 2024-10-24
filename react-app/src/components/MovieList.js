@@ -1,36 +1,61 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import './MovieList.css'; // Importar los estilos
 
 const MovieList = () => {
   const [movies, setMovies] = useState([]);
+  const [idCustomer, setIdCustomer] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
 
-  // Asume que el id del cliente está disponible (puedes cambiar '1' por el ID real)
-  const idCustomer = 49;
+  const fetchMovies = async () => {
+    if (!idCustomer) {
+      setErrorMessage('Por favor ingresa un ID.');
+      return;
+    }
 
-  useEffect(() => {
-    const fetchMovies = async () => {
-      try {
-        const response = await fetch('http://127.0.0.1:5000/get-movies/${idCustomer}');
-        const data = await response.json();
-        setMovies(data.data);
-      } catch (error) {
-        console.error('Error fetching movies:', error);
+    try {
+      const response = await fetch(`http://ec2-34-236-249-156.compute-1.amazonaws.com:5000/get-movies/${idCustomer}`);
+      if (!response.ok) {
+        throw new Error('Error en la respuesta del servidor');
       }
-    };
+      const data = await response.json();
+      setMovies(data.data); // Asignar la lista de películas desde el campo 'data'
+      setErrorMessage(''); // Limpiar mensaje de error
+    } catch (error) {
+      console.error('Error fetching movies:', error);
+      setErrorMessage('Hubo un problema al obtener las películas.');
+    }
+  };
 
+  const handleInputChange = (event) => {
+    setIdCustomer(event.target.value);
+  };
+
+  const handleSearch = () => {
     fetchMovies();
-  }, []);
+  };
 
   return (
     <div>
       <h2>Películas Rentadas</h2>
-      <ul>
+      <div>
+        <input
+          type="text"
+          value={idCustomer}
+          onChange={handleInputChange}
+          placeholder="Ingresa el ID del cliente"
+        />
+        <button onClick={handleSearch}>Buscar</button>
+      </div>
+      {errorMessage && <p className="error">{errorMessage}</p>}
+      <div className="movie-list">
         {movies.map((movie, index) => (
-          <li key={index}>
-            {movie.title} - Film ID: {movie.film_id}
-          </li>
+          <div className="movie-item" key={index}>
+            <div className="movie-title">{movie.title}</div>
+            <div className="movie-id">Film ID: {movie.film_id}</div>
+            <div className="rental-date">FA: {movie.rental_date}</div>
+          </div>
         ))}
-      </ul>
+      </div>
     </div>
   );
 };
