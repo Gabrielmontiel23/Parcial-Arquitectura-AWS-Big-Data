@@ -11,7 +11,7 @@ const RegisterForm = () => {
 
     // Obtener la lista de películas desde el backend
     useEffect(() => {
-        fetch('http://ec2-34-236-249-156.compute-1.amazonaws.com:5000/movies')
+        fetch('http://ec2-52-203-160-255.compute-1.amazonaws.com:5000/movies')
             .then(response => response.json())
             .then(data => {
                 if (data.status === 'success') {
@@ -33,7 +33,7 @@ const RegisterForm = () => {
     const handleSubmit = (e) => {
         e.preventDefault();
         // Enviar los datos al backend, incluyendo film_id
-        fetch('http://ec2-34-236-249-156.compute-1.amazonaws.com:5000/add-rental', {
+        fetch('http://ec2-52-203-160-255.compute-1.amazonaws.com:5000/add-rental', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'

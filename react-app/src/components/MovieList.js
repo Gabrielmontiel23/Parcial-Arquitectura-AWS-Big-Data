@@ -13,7 +13,7 @@ const MovieList = () => {
     }
 
     try {
-      const response = await fetch(`http://ec2-34-236-249-156.compute-1.amazonaws.com:5000/get-movies/${idCustomer}`);
+      const response = await fetch(`http://ec2-52-203-160-255.compute-1.amazonaws.com:5000/get-movies/${idCustomer}`);
       if (!response.ok) {
         throw new Error('Error en la respuesta del servidor');
       }
