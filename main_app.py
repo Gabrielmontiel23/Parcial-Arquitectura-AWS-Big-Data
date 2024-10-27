@@ -26,20 +26,13 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
-try:
-    with app.app_context():
-        db.session.execute(text("SELECT 1"))  # Ejecuta una consulta simple para verificar la conexión
-    print("Conexión a la base de datos establecida con éxito.")
-except Exception as e:
-    print(f"Error al conectar a la base de datos: {e}")
-
 # Configuración de credenciales de AWS para Athena usando variables de entorno
 AWS_ACCESS_KEY = os.getenv('AWS_ACCESS_KEY_ID')
 AWS_SECRET_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
 AWS_SESSION_TOKEN = os.getenv('AWS_SESSION_TOKEN')
-REGION_NAME = 'us-east-1'  # Cambia la región si es necesario
+REGION_NAME = 'us-east-1'
 
-# Inicializar el cliente de Athena con credenciales explícitas
+# Inicializar el cliente de Athena
 athena_client = boto3.client(
     'athena',
     region_name=REGION_NAME,
@@ -48,14 +41,107 @@ athena_client = boto3.client(
     aws_session_token=AWS_SESSION_TOKEN
 )
 
-# Configuración de Athena
 ATHENA_DATABASE = 's3_sakila'
-ATHENA_OUTPUT_LOCATION = 's3://s3sakila/'  # Cambia esto a tu bucket de salida
+ATHENA_OUTPUT_LOCATION = 's3://s3sakila/'
+
+
+# Verificar la conexión a la base de datos
+try:
+    with app.app_context():
+        db.session.execute(text("SELECT 1"))
+    print("Conexión a la base de datos establecida con éxito.")
+except Exception as e:
+    print(f"Error al conectar a la base de datos: {e}")
+
+
+# Ruta para añadir una nueva renta y manejar todas las inserciones
+@app.route('/add-rental', methods=['POST'])
+def add_rental():
+    try:
+        # Obtener datos de la solicitud
+        rental_date = request.get_json().get('rental_date')
+        customer_id = request.get_json().get('customer_id')
+        film_id = request.get_json().get('film_id')
+
+        if not all([rental_date, customer_id, film_id]):
+            return jsonify({
+                "status": "error",
+                "message": "Campos 'rental_date', 'customer_id' y 'film_id' son obligatorios"
+            }), 400
+
+        # 1. Obtener o insertar el address_id del cliente
+        address_query = text("""
+            SELECT address_id FROM customer WHERE customer_id = :customer_id
+        """)
+        address_id = db.session.execute(address_query, {'customer_id': customer_id}).scalar()
+
+        if not address_id:
+            address_insert = text("""
+                INSERT INTO address (address, district, city_id, postal_code, phone, last_update)
+                VALUES ('Default Address', 'Default District', 1, '00000', '000-0000', NOW())
+            """)
+            db.session.execute(address_insert)
+            address_id = db.session.execute(text("SELECT LAST_INSERT_ID()")).scalar()
+
+            update_customer_address = text("""
+                UPDATE customer SET address_id = :address_id WHERE customer_id = :customer_id
+            """)
+            db.session.execute(update_customer_address, {'address_id': address_id, 'customer_id': customer_id})
+
+        # 2. Verificar o insertar el inventario para la película
+        inventory_query = text("""
+            SELECT inventory_id FROM inventory WHERE film_id = :film_id LIMIT 1
+        """)
+        inventory_id = db.session.execute(inventory_query, {'film_id': film_id}).scalar()
+
+        if not inventory_id:
+            inventory_insert = text("""
+                INSERT INTO inventory (film_id, store_id, last_update)
+                VALUES (:film_id, 1, NOW())
+            """)
+            db.session.execute(inventory_insert, {'film_id': film_id})
+            inventory_id = db.session.execute(text("SELECT LAST_INSERT_ID()")).scalar()
+
+        # 3. Crear la renta en la tabla rental
+        rental_insert = text("""
+            INSERT INTO rental (rental_date, inventory_id, customer_id, staff_id, return_date, last_update)
+            VALUES (:rental_date, :inventory_id, :customer_id, 1, NULL, NOW())
+        """)
+        db.session.execute(rental_insert, {
+            'rental_date': rental_date,
+            'inventory_id': inventory_id,
+            'customer_id': customer_id
+        })
+        rental_id = db.session.execute(text("SELECT LAST_INSERT_ID()")).scalar()
+
+        # 4. Inserción en la tabla payment
+        payment_insert = text("""
+            INSERT INTO payment (customer_id, staff_id, rental_id, amount, payment_date, last_update)
+            VALUES (:customer_id, 1, :rental_id, 4.99, NOW(), NOW())
+        """)
+        db.session.execute(payment_insert, {
+            'customer_id': customer_id,
+            'rental_id': rental_id
+        })
+
+        db.session.commit()
+
+        return jsonify({
+            "status": "success",
+            "message": "Renta y registros relacionados añadidos con éxito"
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            "status": "error",
+            "message": f"Error al añadir la renta: {e}"
+        })
+
 
 # Ruta para obtener las películas rentadas por un cliente con el nombre de la película (GET)
 @app.route('/get-movies/<int:id_customer>', methods=['GET'])
 def get_movies(id_customer):
-    # Consulta para obtener el nombre de la película desde fact_venta y film
     query = f"""
         SELECT fv.customer_id, fv.film_id, f.title, fv.rental_date
         FROM fact_venta fv
@@ -64,14 +150,12 @@ def get_movies(id_customer):
     """
 
     try:
-        # Ejecutar la consulta en Athena
         response = athena_client.start_query_execution(
             QueryString=query,
             QueryExecutionContext={'Database': ATHENA_DATABASE},
             ResultConfiguration={'OutputLocation': ATHENA_OUTPUT_LOCATION}
         )
-        
-        # Obtener el ID de ejecución de la consulta
+
         query_execution_id = response['QueryExecutionId']
 
         # Esperar a que la consulta se complete
@@ -84,10 +168,9 @@ def get_movies(id_customer):
             time.sleep(1)
 
         if status == 'SUCCEEDED':
-            # Obtener los resultados de la consulta
             results = athena_client.get_query_results(QueryExecutionId=query_execution_id)
             ventas = []
-            for row in results['ResultSet']['Rows'][1:]:  # Ignorar la primera fila (cabecera)
+            for row in results['ResultSet']['Rows'][1:]:
                 customer_id = row['Data'][0]['VarCharValue']
                 film_id = row['Data'][1]['VarCharValue']
                 title = row['Data'][2]['VarCharValue']
@@ -115,61 +198,10 @@ def get_movies(id_customer):
             "message": f"Error al obtener datos de ventas: {e}"
         })
 
-# Ruta para añadir una nueva renta en MySQL RDS (POST)
-@app.route('/add-rental', methods=['POST'])
-def add_rental():
-    try:
-        # Obtener datos del cuerpo de la solicitud
-        rental_data = request.get_json()
-        rental_date = rental_data.get('rental_date')
-        customer_id = rental_data.get('customer_id')
-        film_id = rental_data.get('film_id')
 
-        # Validación básica de datos
-        if not all([rental_date, customer_id, film_id]):
-            return jsonify({
-                "status": "error",
-                "message": "Todos los campos son obligatorios (fecha, documento del cliente, película)"
-            }), 400
-
-        # Verificar que haya un inventory_id disponible para la película seleccionada
-        inventory_query = text("SELECT inventory_id FROM inventory WHERE film_id = :film_id LIMIT 1")
-        inventory = db.session.execute(inventory_query, {'film_id': film_id}).fetchone()
-        if not inventory:
-            return jsonify({
-                "status": "error",
-                "message": "No hay inventario disponible para esta película."
-            }), 400
-
-        inventory_id = inventory[0]
-
-        # Inserción en la tabla rental
-        rental_query = text("""
-            INSERT INTO rental (rental_date, inventory_id, customer_id, staff_id)
-            VALUES (:rental_date, :inventory_id, :customer_id, 1)  -- Asignando staff_id fijo por defecto
-        """)
-        db.session.execute(rental_query, {
-            'rental_date': rental_date,
-            'inventory_id': inventory_id,
-            'customer_id': customer_id
-        })
-        db.session.commit()
-
-        return jsonify({
-            "status": "success",
-            "message": "Renta añadida con éxito"
-        })
-
-    except Exception as e:
-        return jsonify({
-            "status": "error",
-            "message": f"Error al añadir la renta: {e}"
-        })
-        
 # Ruta para obtener todas las películas (GET)
 @app.route('/movies', methods=['GET'])
 def get_all_movies():
-    # Consulta SQL para obtener los títulos y IDs de las películas desde la tabla 'film'
     query = "SELECT film_id, title FROM film"
 
     try:
@@ -186,6 +218,7 @@ def get_all_movies():
             "status": "error",
             "message": f"Error al obtener las películas: {e}"
         })
+
 
 if __name__ == '__main__':
     app.run(port=5000, host='0.0.0.0', debug=True)
