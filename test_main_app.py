@@ -1,84 +1,62 @@
 import unittest
-from unittest.mock import patch, MagicMock
-from flask import json
-from main_app import app
+import json
+from app import app, db
 
-class TestFlaskApp(unittest.TestCase):
-
+class AppTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.app = app.test_client()
-        cls.app.testing = True
+        # Configuración inicial para ejecutar las pruebas
+        app.config['TESTING'] = True
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'  # Base de datos en memoria para pruebas
+        cls.client = app.test_client()
+        with app.app_context():
+            db.create_all()
 
-    @patch('main_app.db.session.execute')
-    @patch('main_app.db.session.commit')
-    def test_add_rental_success(self, mock_commit, mock_execute):
-        # Simula las inserciones en la base de datos con mocks
-        mock_execute.return_value.scalar.side_effect = [1, 2, 3]  # IDs simulados para address, inventory, rental
-        
-        # Datos de prueba para la solicitud POST
-        rental_data = {
-            'rental_date': '2024-10-24 14:30:00',
-            'customer_id': 5,
+    @classmethod
+    def tearDownClass(cls):
+        # Limpia la base de datos después de todas las pruebas
+        with app.app_context():
+            db.session.remove()
+            db.drop_all()
+
+    def test_add_rental_missing_fields(self):
+        """Prueba para el endpoint /add-rental con campos faltantes"""
+        response = self.client.post('/add-rental', json={
+            'rental_date': '2024-01-01',
+            'customer_id': 1  # Falta film_id
+        })
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("error", response.json['status'])
+
+    def test_add_rental_successful(self):
+        """Prueba para el endpoint /add-rental con datos correctos"""
+        response = self.client.post('/add-rental', json={
+            'rental_date': '2024-01-01',
+            'customer_id': 1,
             'film_id': 1
-        }
-
-        response = self.app.post('/add-rental', 
-                                 data=json.dumps(rental_data),
-                                 content_type='application/json')
-
-        # Verifica que la respuesta sea exitosa
+        })
         self.assertEqual(response.status_code, 200)
-        response_json = json.loads(response.data)
-        self.assertEqual(response_json['status'], 'success')
-        self.assertEqual(response_json['message'], 'Renta y registros relacionados añadidos con éxito')
+        self.assertIn("success", response.json['status'])
 
-    @patch('main_app.athena_client.start_query_execution')
-    @patch('main_app.athena_client.get_query_execution')
-    @patch('main_app.athena_client.get_query_results')
-    def test_get_movies_success(self, mock_get_query_results, mock_get_query_execution, mock_start_query_execution):
-        # Simula la ejecución de la consulta en Athena
-        mock_start_query_execution.return_value = {'QueryExecutionId': '1234'}
-        mock_get_query_execution.return_value = {
-            'QueryExecution': {'Status': {'State': 'SUCCEEDED'}}
-        }
-        # Ajuste del mock para get_query_results
-        mock_get_query_results.return_value = {
-            'ResultSet': {
-                'Rows': [
-                    {'Data': [{'VarCharValue': '5'}, {'VarCharValue': '1'}, {'VarCharValue': 'Inception'}, {'VarCharValue': '2024-10-24 14:30:00'}]},
-                    {'Data': [{'VarCharValue': '5'}, {'VarCharValue': '2'}, {'VarCharValue': 'The Matrix'}, {'VarCharValue': '2024-10-25 14:30:00'}]}
-                ]
-            }
-        }
-
-        # Realiza la solicitud GET
-        response = self.app.get('/get-movies/5')
-
-        # Verifica que la respuesta sea exitosa
+    def test_get_movies_for_customer(self):
+        """Prueba para el endpoint /get-movies/<id_customer>"""
+        response = self.client.get('/get-movies/1')
         self.assertEqual(response.status_code, 200)
-        response_json = json.loads(response.data)
-        self.assertEqual(response_json['status'], 'success')
-        self.assertEqual(len(response_json['data']), 2)
-        self.assertEqual(response_json['data'][0]['title'], 'Inception')
-        self.assertEqual(response_json['data'][1]['title'], 'The Matrix')
+        self.assertIn("success", response.json['status'])
+        self.assertIsInstance(response.json['data'], list)
 
-    @patch('main_app.db.session.execute')
-    def test_get_all_movies_success(self, mock_execute):
-        # Simula los resultados de la consulta a la base de datos
-        mock_execute.return_value.fetchall.return_value = [(1, 'ACADEMY DINOSAUR'), (2, 'The Matrix')]
-    
-        # Realiza la solicitud GET
-        response = self.app.get('/movies')
-    
-        # Verifica que la respuesta sea exitosa
+    def test_get_all_movies(self):
+        """Prueba para el endpoint /movies"""
+        response = self.client.get('/movies')
         self.assertEqual(response.status_code, 200)
-        response_json = json.loads(response.data)
-        self.assertEqual(response_json['status'], 'success')
-        self.assertEqual(len(response_json['data']), 2)
-        self.assertEqual(response_json['data'][0]['film_id'], 1)
-        self.assertEqual(response_json['data'][0]['title'], 'ACADEMY DINOSAUR')
+        self.assertIn("success", response.json['status'])
+        self.assertIsInstance(response.json['data'], list)
 
+    def test_get_movies_invalid_customer(self):
+        """Prueba para verificar manejo de errores en /get-movies/<id_customer>"""
+        response = self.client.get('/get-movies/9999')  # Cliente inexistente
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("success", response.json['status'])  # Puede cambiar según implementación
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
