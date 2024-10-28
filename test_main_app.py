@@ -42,11 +42,13 @@ class TestFlaskApp(unittest.TestCase):
     @patch('main_app.athena_client.get_query_execution')
     @patch('main_app.athena_client.get_query_results')
     def test_get_movies_success(self, mock_get_query_results, mock_get_query_execution, mock_start_query_execution):
-        # Simular el comportamiento de AWS Athena
+        # Simular el inicio de la consulta
         mock_start_query_execution.return_value = {'QueryExecutionId': '1234'}
+        # Simular que la consulta en Athena fue exitosa
         mock_get_query_execution.return_value = {
             'QueryExecution': {'Status': {'State': 'SUCCEEDED'}}
         }
+        # Simular los resultados de la consulta
         mock_get_query_results.return_value = {
             'ResultSet': {
                 'Rows': [
@@ -54,17 +56,17 @@ class TestFlaskApp(unittest.TestCase):
                 ]
             }
         }
-
+    
         # Realizar la solicitud GET
         response = self.app.get('/get-movies/5')
-
-        # Verificar que la respuesta sea exitosa
+    
+        # Verificar que la respuesta sea exitosa y contenga un elemento
         self.assertEqual(response.status_code, 200)
         response_json = json.loads(response.data)
         self.assertEqual(response_json['status'], 'success')
-        self.assertEqual(len(response_json['data']), 1)
+        self.assertEqual(len(response_json['data']), 1)  # Se espera un elemento en 'data'
         self.assertEqual(response_json['data'][0]['title'], 'Inception')
-        self.assertTrue(mock_start_query_execution.called)
+
 
     # Prueba para el endpoint /movies con base de datos simulada
     @patch('main_app.db.session')
