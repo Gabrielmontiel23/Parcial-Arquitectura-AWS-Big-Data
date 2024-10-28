@@ -171,16 +171,19 @@ def get_movies(id_customer):
             results = athena_client.get_query_results(QueryExecutionId=query_execution_id)
             ventas = []
             for row in results['ResultSet']['Rows'][1:]:
-                customer_id = row['Data'][0]['VarCharValue']
-                film_id = row['Data'][1]['VarCharValue']
-                title = row['Data'][2]['VarCharValue']
-                rental_date = row['Data'][3]['VarCharValue']
-                ventas.append({
-                    'customer_id': customer_id,
-                    'film_id': film_id,
-                    'title': title,
-                    'rental_date': rental_date,
-                })
+                # Verifica si 'Data' tiene la cantidad esperada de columnas
+                if len(row['Data']) == 4:
+                    customer_id = row['Data'][0].get('VarCharValue', '')
+                    film_id = row['Data'][1].get('VarCharValue', '')
+                    title = row['Data'][2].get('VarCharValue', '')
+                    rental_date = row['Data'][3].get('VarCharValue', '')
+                    ventas.append({
+                        'customer_id': customer_id,
+                        'film_id': film_id,
+                        'title': title,
+                        'rental_date': rental_date,
+                    })
+
 
             return jsonify({
                 "status": "success",
