@@ -40,7 +40,7 @@ jobs:
   # Job para desplegar en EC2
   deploy:
     runs-on: ubuntu-latest
-    needs: test  # Este paso asegura que 'deploy' solo se ejecuta si 'test' pasa correctamente
+    needs: test
 
     steps:
     - name: Checkout code
@@ -51,7 +51,7 @@ jobs:
         EC2_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY_BACK }}
         SERVER_IP: ${{ secrets.BACKEND_SSH_HOST }}
         EC2_USER: ${{ secrets.BACKEND_USER_NAME }}
-        APP_DIR: /home/ubuntu/Parcial-Arquitectura-AWS-Big-Data  # Cambia a la ubicación del proyecto en la instancia EC2
+        APP_DIR: /home/ubuntu/Parcial-Arquitectura-AWS-Big-Data
       run: |
         echo "$EC2_PRIVATE_KEY" | tr -d '\r' > ec2_key
         chmod 600 ec2_key
