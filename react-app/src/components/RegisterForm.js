@@ -54,9 +54,9 @@ const RegisterForm = () => {
     return (
         <form onSubmit={handleSubmit}>
             <label>
-                Fecha de Renta:
+                Fecha y Hora de Renta:
                 <input
-                    type="date"
+                    type="datetime-local"
                     value={formData.rental_date}
                     onChange={(e) => setFormData({ ...formData, rental_date: e.target.value })}
                     required
