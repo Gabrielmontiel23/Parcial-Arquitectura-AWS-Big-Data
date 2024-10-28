@@ -47,11 +47,13 @@ class TestFlaskApp(unittest.TestCase):
         mock_get_query_results.return_value = {
             'ResultSet': {
                 'Rows': [
+                    {'Data': [{'VarCharValue': 'customer_id'}, {'VarCharValue': 'film_id'}, {'VarCharValue': 'title'}, {'VarCharValue': 'rental_date'}]},  # Fila de encabezado
                     {'Data': [{'VarCharValue': '5'}, {'VarCharValue': '1'}, {'VarCharValue': 'Inception'}, {'VarCharValue': '2024-10-24 14:30:00'}]},
                     {'Data': [{'VarCharValue': '5'}, {'VarCharValue': '2'}, {'VarCharValue': 'The Matrix'}, {'VarCharValue': '2024-10-25 14:30:00'}]},
                 ]
             }
         }
+
 
         # Realiza la solicitud GET
         response = self.app.get('/get-movies/5')
