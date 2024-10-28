@@ -21,7 +21,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        print("Hecho")
+        
 
     - name: Set environment variables for testing
       run: |
