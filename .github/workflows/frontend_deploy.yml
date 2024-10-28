@@ -69,22 +69,18 @@ jobs:
           chmod 600 ec2_key
           ssh -o StrictHostKeyChecking=no -i ec2_key ${EC2_USER}@${SERVER_IP} '
               # Instalar Apache si no está instalado
-              sudo apt-get update &&
-              sudo apt-get install -y apache2 &&
+              sudo apt install apache2
+              npm install
               
               # Acceder al directorio del proyecto
-              cd ${APP_DIR}/react-app &&
+              cd Parcial-Arquitectura-AWS-Big-Data &&
+              cd react-app &&
 
-              # Sincronizar los últimos cambios del repositorio
               git fetch --all &&
               git reset --hard origin/frontend &&
               git pull origin frontend &&
-
-              # Instalar dependencias y construir el proyecto
-              npm install &&
-              npm run build &&
-
-              # Copiar la construcción al directorio de Apache y reiniciar Apache
-              sudo cp -r build/* /var/www/html/ &&
+              
+              npm run build
+              sudo cp -r build/* /var/www/html/
               sudo systemctl restart apache2
           '
