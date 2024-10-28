@@ -7,7 +7,6 @@ class TestFlaskApp(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        # Configura el cliente de prueba de Flask
         cls.app = app.test_client()
         cls.app.testing = True
 
@@ -43,10 +42,12 @@ class TestFlaskApp(unittest.TestCase):
         mock_get_query_execution.return_value = {
             'QueryExecution': {'Status': {'State': 'SUCCEEDED'}}
         }
+        # Ajuste del mock para get_query_results
         mock_get_query_results.return_value = {
             'ResultSet': {
                 'Rows': [
                     {'Data': [{'VarCharValue': '5'}, {'VarCharValue': '1'}, {'VarCharValue': 'Inception'}, {'VarCharValue': '2024-10-24 14:30:00'}]},
+                    {'Data': [{'VarCharValue': '5'}, {'VarCharValue': '2'}, {'VarCharValue': 'The Matrix'}, {'VarCharValue': '2024-10-25 14:30:00'}]},
                 ]
             }
         }
@@ -58,8 +59,9 @@ class TestFlaskApp(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         response_json = json.loads(response.data)
         self.assertEqual(response_json['status'], 'success')
-        self.assertEqual(len(response_json['data']), 1)
+        self.assertEqual(len(response_json['data']), 2)
         self.assertEqual(response_json['data'][0]['title'], 'Inception')
+        self.assertEqual(response_json['data'][1]['title'], 'The Matrix')
 
     @patch('main_app.db.session.execute')
     def test_get_all_movies_success(self, mock_execute):
