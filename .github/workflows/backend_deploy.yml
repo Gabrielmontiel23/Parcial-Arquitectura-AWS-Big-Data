@@ -56,11 +56,18 @@ jobs:
         echo "$EC2_PRIVATE_KEY" | tr -d '\r' > ec2_key
         chmod 600 ec2_key
         ssh -o StrictHostKeyChecking=no -i ec2_key ${EC2_USER}@${SERVER_IP} '
-            cd ${APP_DIR} &&
+            cd Parcial-Arquitectura-AWS-Big-Data &&
+            # Activar el entorno virtual si es necesario
+            source mi_entorno/bin/activate &&
+            # Sincronizar los últimos cambios del repositorio
             git fetch --all &&
             git reset --hard origin/backend &&
             git pull origin backend &&
+            # Instalar dependencias necesarias
             pip install -r requirements.txt &&
-            pkill gunicorn || true &&
+            
+            # Detener instancias previas de Gunicorn si existen
+            pkill gunicorn || true
+            # Ejecuta la aplicación con Gunicorn
             gunicorn -b 0.0.0.0:5000 main_app:app --daemon
         '
