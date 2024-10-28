@@ -1,8 +1,8 @@
 import unittest
 import json
-from main_app import main_app, db
+from main_app import app, db  # Asegúrate de que main_app.py esté en el mismo directorio o especifica el path correctamente
 
-class AppTestCase(unittest.TestCase):
+class MainAppTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         # Configuración inicial para ejecutar las pruebas
