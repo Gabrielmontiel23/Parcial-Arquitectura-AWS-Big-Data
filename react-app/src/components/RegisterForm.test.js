@@ -1,3 +1,4 @@
+import { act } from 'react'; // Importar 'act' desde 'react'
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import RegisterForm from './RegisterForm';
