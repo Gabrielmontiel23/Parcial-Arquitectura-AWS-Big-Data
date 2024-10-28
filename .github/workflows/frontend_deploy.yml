@@ -60,7 +60,7 @@ jobs:
       # Step 3: Copy project to EC2 and restart server
       - name: Copy project to EC2 and restart server
         env:
-          EC2_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          EC2_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY_FRONT }}
           SERVER_IP: ${{ secrets.FRONTEND_SSH_HOST }}
           EC2_USER: ${{ secrets.FRONTEND_USER_NAME }}
           APP_DIR: /home/ubuntu/Parcial-Arquitectura-AWS-Big-Data  # Ubicación en la instancia EC2
