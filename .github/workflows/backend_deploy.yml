@@ -23,47 +23,24 @@ jobs:
       run: |
         pip install -r requirements.txt
 
+    - name: Set environment variables for testing
+      run: |
+        echo "DB_USER=${{ secrets.DB_USER }}" >> $GITHUB_ENV
+        echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> $GITHUB_ENV
+        echo "DB_HOST=${{ secrets.DB_HOST }}" >> $GITHUB_ENV
+        echo "DB_NAME=${{ secrets.DB_NAME }}" >> $GITHUB_ENV
+        echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> $GITHUB_ENV
+        echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> $GITHUB_ENV
+        echo "AWS_SESSION_TOKEN=${{ secrets.AWS_SESSION_TOKEN }}" >> $GITHUB_ENV
+
     - name: Run unit tests
       run: |
-        python -m unittest test_main_app.py  # Cambia 'tests' al directorio donde estén tus pruebas unitarias
-
-  # Job para crear los recursos en AWS S3 y ejecutar scripts de jobs en Glue
-  aws_setup:
-    runs-on: ubuntu-latest
-    needs: test
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
-
-    - name: Setup Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.x'
-
-    - name: Install boto3
-      run: |
-        pip install boto3
-
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v2
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: 'us-east-1'  # Cambia a tu región de AWS
-
-    - name: Upload jobs to S3
-      run: |
-        python scripts/upload_jobs_to_s3.py  # Script para subir archivos de jobs a S3
-
-    - name: Run AWS Glue job
-      run: |
-        python scripts/run_glue_job.py  # Script para ejecutar el job de Glue
+        python -m unittest discover -s tests
 
   # Job para desplegar en EC2
   deploy:
     runs-on: ubuntu-latest
-    needs: [test, aws_setup]
+    needs: test  # Este paso asegura que 'deploy' solo se ejecuta si 'test' pasa correctamente
 
     steps:
     - name: Checkout code
@@ -71,7 +48,7 @@ jobs:
 
     - name: Setup SSH and deploy to EC2
       env:
-        EC2_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        EC2_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY_BACK }}
         SERVER_IP: ${{ secrets.BACKEND_SSH_HOST }}
         EC2_USER: ${{ secrets.BACKEND_USER_NAME }}
         APP_DIR: /home/ubuntu/Parcial-Arquitectura-AWS-Big-Data  # Cambia a la ubicación del proyecto en la instancia EC2
