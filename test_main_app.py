@@ -15,7 +15,7 @@ class TestFlaskApp(unittest.TestCase):
     def test_add_rental_success(self, mock_commit, mock_execute):
         # Simula las inserciones en la base de datos con mocks
         mock_execute.return_value.scalar.side_effect = [1, 2, 3]  # IDs simulados para address, inventory, rental
-        
+
         # Datos de prueba para la solicitud POST
         rental_data = {
             'rental_date': '2024-10-24 14:30:00',
