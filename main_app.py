@@ -50,12 +50,6 @@ ATHENA_OUTPUT_LOCATION = 's3://s3sakila/'
 
 
 # Verificar la conexión a la base de datos
-try:
-    with app.app_context():
-        db.session.execute(text("SELECT 1"))
-    print("Conexión a la base de datos establecida con éxito.")
-except Exception as e:
-    print(f"Error al conectar a la base de datos: {e}")
 
 
 # Ruta para añadir una nueva renta y manejar todas las inserciones
