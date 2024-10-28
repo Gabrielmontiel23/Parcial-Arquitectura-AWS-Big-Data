@@ -15,7 +15,7 @@ class TestFlaskApp(unittest.TestCase):
     def test_add_rental_success(self, mock_commit, mock_execute):
         # Simula las inserciones en la base de datos con mocks
         mock_execute.return_value.scalar.side_effect = [1, 2, 3]  # IDs simulados para address, inventory, rental
-
+        
         # Datos de prueba para la solicitud POST
         rental_data = {
             'rental_date': '2024-10-24 14:30:00',
@@ -47,7 +47,7 @@ class TestFlaskApp(unittest.TestCase):
             'ResultSet': {
                 'Rows': [
                     {'Data': [{'VarCharValue': '5'}, {'VarCharValue': '1'}, {'VarCharValue': 'Inception'}, {'VarCharValue': '2024-10-24 14:30:00'}]},
-                    {'Data': [{'VarCharValue': '5'}, {'VarCharValue': '2'}, {'VarCharValue': 'The Matrix'}, {'VarCharValue': '2024-10-25 14:30:00'}]},
+                    {'Data': [{'VarCharValue': '5'}, {'VarCharValue': '2'}, {'VarCharValue': 'The Matrix'}, {'VarCharValue': '2024-10-25 14:30:00'}]}
                 ]
             }
         }
@@ -66,17 +66,19 @@ class TestFlaskApp(unittest.TestCase):
     @patch('main_app.db.session.execute')
     def test_get_all_movies_success(self, mock_execute):
         # Simula los resultados de la consulta a la base de datos
-        mock_execute.return_value.fetchall.return_value = [(1, 'Inception'), (2, 'The Matrix')]
-
+        mock_execute.return_value.fetchall.return_value = [(1, 'ACADEMY DINOSAUR'), (2, 'The Matrix')]
+    
         # Realiza la solicitud GET
         response = self.app.get('/movies')
-
+    
         # Verifica que la respuesta sea exitosa
         self.assertEqual(response.status_code, 200)
         response_json = json.loads(response.data)
         self.assertEqual(response_json['status'], 'success')
         self.assertEqual(len(response_json['data']), 2)
-        self.assertEqual(response_json['data'][0]['title'], 'Inception')
+        self.assertEqual(response_json['data'][0]['film_id'], 1)
+        self.assertEqual(response_json['data'][0]['title'], 'ACADEMY DINOSAUR')
+
 
 if __name__ == '__main__':
     unittest.main()
