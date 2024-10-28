@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch, MagicMock
 from flask import json
-from main_app import app, db, athena_client  # Importa la app y los objetos relevantes
+from main_app import app  # Importa la app desde main_app.py
 
 class TestFlaskApp(unittest.TestCase):
 
@@ -11,23 +11,12 @@ class TestFlaskApp(unittest.TestCase):
         cls.app = app.test_client()
         cls.app.testing = True
 
-    def setUp(self):
-        # Crea una base de datos en memoria para las pruebas
-        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
-        with app.app_context():
-            db.create_all()
-
-    def tearDown(self):
-        # Elimina la base de datos en memoria después de cada prueba
-        with app.app_context():
-            db.session.remove()
-            db.drop_all()
-
     @patch('main_app.db.session.execute')
-    def test_add_rental_success(self, mock_execute):
+    @patch('main_app.db.session.commit')
+    def test_add_rental_success(self, mock_commit, mock_execute):
         # Configura el mock para simular las inserciones en la base de datos
-        mock_execute.return_value.scalar.side_effect = [1, 2, 3]  # Simula IDs generados para address, inventory, y rental
-
+        mock_execute.return_value.scalar.side_effect = [1, 2, 3]  # IDs simulados para address, inventory, rental
+        
         # Datos de prueba para la solicitud POST
         rental_data = {
             'rental_date': '2024-10-24 14:30:00',
