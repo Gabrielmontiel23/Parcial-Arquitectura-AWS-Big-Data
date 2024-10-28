@@ -1,3 +1,4 @@
+import { act } from 'react'; // Importar 'act' desde 'react'
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import MovieList from './MovieList';
