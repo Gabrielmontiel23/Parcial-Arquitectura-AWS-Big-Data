@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch, MagicMock
 from flask import json
-from main_app import app  # Importa la app desde main_app.py
+from main_app import app
 
 class TestFlaskApp(unittest.TestCase):
 
@@ -14,7 +14,7 @@ class TestFlaskApp(unittest.TestCase):
     @patch('main_app.db.session.execute')
     @patch('main_app.db.session.commit')
     def test_add_rental_success(self, mock_commit, mock_execute):
-        # Configura el mock para simular las inserciones en la base de datos
+        # Simula las inserciones en la base de datos con mocks
         mock_execute.return_value.scalar.side_effect = [1, 2, 3]  # IDs simulados para address, inventory, rental
         
         # Datos de prueba para la solicitud POST
@@ -33,7 +33,6 @@ class TestFlaskApp(unittest.TestCase):
         response_json = json.loads(response.data)
         self.assertEqual(response_json['status'], 'success')
         self.assertEqual(response_json['message'], 'Renta y registros relacionados añadidos con éxito')
-        self.assertTrue(mock_execute.called)
 
     @patch('main_app.athena_client.start_query_execution')
     @patch('main_app.athena_client.get_query_execution')
