@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import NameBox from './components/NameBox';
+import NameBox from './NameBox';
 
 test('renderiza el componente NameBox', () => {
   render(<NameBox />);
