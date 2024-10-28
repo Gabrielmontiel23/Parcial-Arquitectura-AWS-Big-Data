@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import MovieList from './components/MovieList';
+import MovieList from './MovieList';
 
 test('renderiza el componente MovieList', () => {
   // Simula una lista de películas simple
