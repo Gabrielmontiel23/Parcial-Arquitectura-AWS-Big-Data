@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import RegisterForm from './components/RegisterForm';
+import RegisterForm from './RegisterForm';
 
 test('renderiza el componente RegisterForm', () => {
   render(<RegisterForm />);
