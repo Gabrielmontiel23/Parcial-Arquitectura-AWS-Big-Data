@@ -6,6 +6,7 @@ on:
       - backend
 
 jobs:
+  # Job para ejecutar pruebas unitarias
   test:
     runs-on: ubuntu-latest
 
@@ -24,11 +25,45 @@ jobs:
 
     - name: Run unit tests
       run: |
-        python -m unittest test_main_app.py
+        python -m unittest discover -s tests  # Cambia 'tests' al directorio donde estén tus pruebas unitarias
 
+  # Job para crear los recursos en AWS S3 y ejecutar scripts de jobs en Glue
+  aws_setup:
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Setup Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+
+    - name: Install boto3
+      run: |
+        pip install boto3
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: 'us-east-1'  # Cambia a tu región de AWS
+
+    - name: Upload jobs to S3
+      run: |
+        python scripts/upload_jobs_to_s3.py  # Script para subir archivos de jobs a S3
+
+    - name: Run AWS Glue job
+      run: |
+        python scripts/run_glue_job.py  # Script para ejecutar el job de Glue
+
+  # Job para desplegar en EC2
   deploy:
     runs-on: ubuntu-latest
-    needs: test # Este paso asegura que 'deploy' solo se ejecuta si 'test' pasa correctamente.
+    needs: [test, aws_setup]
 
     steps:
     - name: Checkout code
@@ -44,23 +79,11 @@ jobs:
         echo "$EC2_PRIVATE_KEY" | tr -d '\r' > ec2_key
         chmod 600 ec2_key
         ssh -o StrictHostKeyChecking=no -i ec2_key ${EC2_USER}@${SERVER_IP} '
-            # Acceder al directorio del proyecto
-            cd Parcial-Arquitectura-AWS-Big-Data &&
-
-            # Activar el entorno virtual si es necesario
-            source env/bin/activate &&
-
-            # Sincronizar los últimos cambios del repositorio
+            cd ${APP_DIR} &&
             git fetch --all &&
             git reset --hard origin/backend &&
             git pull origin backend &&
-
-            # Instalar dependencias necesarias
             pip install -r requirements.txt &&
-            
-            # Detener instancias previas de Gunicorn si existen
-            pkill gunicorn || true
-
-            # Ejecuta la aplicación con Gunicorn
+            pkill gunicorn || true &&
             gunicorn -b 0.0.0.0:5000 main_app:app --daemon
         '
