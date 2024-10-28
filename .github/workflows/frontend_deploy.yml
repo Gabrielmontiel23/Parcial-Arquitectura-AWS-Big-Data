@@ -1,12 +1,12 @@
-name: Frontend CI/CD
+name: Frontend Deploy and Test
 
 on:
   push:
     branches:
-      - frontend  # Ejecutar el flujo solo cuando se realice un push a la rama 'frontend'
+      - frontend  # Rama que dispara el pipeline de CI/CD
 
 jobs:
-  # Job de pruebas
+  # Job para pruebas del frontend
   test:
     runs-on: ubuntu-latest
 
@@ -17,18 +17,22 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v2
       with:
-        node-version: '16.x'  # O la versión de Node.js que estás usando
+        node-version: '16.x'  # O la versión de Node.js que estés usando
 
     - name: Install dependencies
-      run: npm install
+      run: |
+        npm install
+      working-directory: ./react-app  # Directorio de tu proyecto React
 
     - name: Run frontend tests
-      run: npm test -- --watchAll=false
+      run: |
+        npm test -- --watchAll=false
+      working-directory: ./react-app
 
-  # Job de despliegue
+  # Job para despliegue del frontend
   deploy:
     runs-on: ubuntu-latest
-    needs: test  # Asegura que el job 'deploy' se ejecute solo si el job 'test' pasa correctamente
+    needs: test  # Este paso asegura que 'deploy' solo se ejecuta si 'test' pasa correctamente
 
     steps:
     - name: Checkout code
@@ -39,37 +43,24 @@ jobs:
       with:
         node-version: '16.x'
 
-    - name: Build frontend
-      run: |
-        npm install
-        npm run build
-
     - name: Copy project to EC2 and restart server
       env:
-        EC2_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY_FRONT }}
+        EC2_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         SERVER_IP: ${{ secrets.FRONTEND_SSH_HOST }}
         EC2_USER: ${{ secrets.FRONTEND_USER_NAME }}
-        APP_DIR: /home/ubuntu/Parcial-Arquitectura-AWS-Big-Data  # Cambia a la ubicación del proyecto en la instancia EC2
+        APP_DIR: /home/ubuntu/Parcial-Arquitectura-AWS-Big-Data  # Directorio en la instancia EC2
       run: |
         echo "$EC2_PRIVATE_KEY" | tr -d '\r' > ec2_key
         chmod 600 ec2_key
         ssh -o StrictHostKeyChecking=no -i ec2_key ${EC2_USER}@${SERVER_IP} '
-            # Instalar Apache si no está instalado
-            if ! which apache2 > /dev/null; then
-              sudo apt update
-              sudo apt install -y apache2
-            fi
+            # Asegurarse de que Apache esté instalado
+            sudo apt update
+            sudo apt install -y apache2
             
-            # Instalar Node.js y NPM si no están instalados
-            if ! which node > /dev/null; then
-              curl -fsSL https://deb.nodesource.com/setup_16.x | sudo -E bash -
-              sudo apt install -y nodejs
-            fi
-
-            # Acceder al directorio del proyecto en la instancia EC2
+            # Acceder al directorio del proyecto en EC2
             cd ${APP_DIR}/react-app &&
-
-            # Sincronizar los últimos cambios del repositorio
+            
+            # Sincronizar el repositorio con la última versión
             git fetch --all &&
             git reset --hard origin/frontend &&
             git pull origin frontend &&
@@ -77,10 +68,8 @@ jobs:
             # Instalar dependencias y construir el proyecto
             npm install &&
             npm run build &&
-
-            # Copiar la carpeta 'build' a la carpeta pública de Apache
+            
+            # Copiar el build a la carpeta de Apache y reiniciar el servidor
             sudo cp -r build/* /var/www/html/ &&
-
-            # Reiniciar Apache para aplicar los cambios
             sudo systemctl restart apache2
         '
