@@ -21,7 +21,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        pip install -r requirements.txt
+        print("Hecho")
 
     - name: Set environment variables for testing
       run: |
