@@ -1,6 +1,6 @@
 import unittest
 import json
-from app import app, db
+from main_app import main_app, db
 
 class AppTestCase(unittest.TestCase):
     @classmethod
