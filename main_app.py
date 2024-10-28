@@ -147,7 +147,9 @@ def get_movies(id_customer):
         FROM fact_venta fv
         JOIN film f ON fv.film_id = f.film_id
         WHERE fv.customer_id = {id_customer}
+        ORDER BY fv.rental_date DESC  -- Orden ascendente por fecha de inserción
     """
+
 
     try:
         response = athena_client.start_query_execution(
