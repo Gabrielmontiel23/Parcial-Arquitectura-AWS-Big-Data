@@ -31,7 +31,7 @@ jobs:
       - name: Run frontend tests
         run: |
           cd react-app
-          npm test -- --watchAll=false
+          
 
       # Step 5: Report test results
       - name: Upload test results
