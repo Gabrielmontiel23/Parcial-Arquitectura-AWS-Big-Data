@@ -42,6 +42,7 @@ class TestFlaskApp(unittest.TestCase):
         mock_get_query_execution.return_value = {
             'QueryExecution': {'Status': {'State': 'SUCCEEDED'}}
         }
+        
         # Ajuste del mock para get_query_results
         mock_get_query_results.return_value = {
             'ResultSet': {
