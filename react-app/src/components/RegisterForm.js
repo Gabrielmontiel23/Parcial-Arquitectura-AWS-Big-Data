@@ -75,7 +75,7 @@ const RegisterForm = () => {
             <br />
             <label>
                 Película:
-                <select value={selectedFilmId} onChange={handleMovieChange} required>
+                <select value={selectedMovie || ''} onChange={handleSelectChange}>
                     <option value="">Seleccione una película</option>
                     {movies.map(movie => (
                         <option key={movie.film_id} value={movie.film_id}>
